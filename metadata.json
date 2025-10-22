@@ -1,0 +1,7 @@
+{
+  "name": "Gemini Super Smart Voice Agent",
+  "description": "An intelligent voice agent that remembers conversations, speaks naturally, and can access up-to-date information. Features a real-time voice conversation mode and a text-based chat with TTS responses.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
