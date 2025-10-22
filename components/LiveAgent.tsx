@@ -30,6 +30,7 @@ export const LiveAgent: React.FC = () => {
     const streamRef = useRef<MediaStream | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+    const transcriptEndRef = useRef<HTMLDivElement>(null);
     
     // For audio playback
     const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -39,6 +40,10 @@ export const LiveAgent: React.FC = () => {
 
     const currentInputTranscription = useRef('');
     const currentOutputTranscription = useRef('');
+
+    useEffect(() => {
+        transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [transcript]);
     
     const stopPlayback = useCallback(() => {
         sourcesRef.current.forEach(source => {
@@ -188,39 +193,43 @@ export const LiveAgent: React.FC = () => {
 
     const getStatusText = () => {
         switch (status) {
-            case 'idle': return 'Tap the icon to initiate a live conversation.';
+            case 'idle': return 'Tap the icon to start a conversation.';
             case 'connecting': return 'Establishing secure connection...';
             case 'listening': return 'Listening...';
             case 'speaking': return 'Agent is speaking...';
-            case 'error': return 'Connection error. Please try again.';
+            case 'error': return 'Connection error. Tap to try again.';
         }
     };
     
     const pulseClass = status === 'listening' ? 'pulse-ring' : '';
 
     return (
-        <div className="flex flex-col items-center justify-between h-full text-center">
-            <div className="flex-grow flex flex-col items-center justify-center">
-                <button 
+        <div className="flex flex-col h-full text-center">
+            {/* Transcript Area */}
+            <div className="flex-grow w-full max-w-4xl mx-auto flex flex-col justify-end relative overflow-hidden">
+                <div className="absolute top-0 bottom-0 left-0 right-0 overflow-y-auto p-4 space-y-4">
+                    {transcript.map((item, index) => (
+                        <div key={index} className={`flex items-start gap-3 max-w-xl animate-slide-in ${item.speaker === 'user' ? 'ml-auto flex-row-reverse' : ''}`}>
+                             <div className={`w-6 h-6 rounded-full flex-shrink-0 mt-1 ${item.speaker === 'user' ? 'bg-gray-700' : 'bg-cyan-800'}`}></div>
+                             <div className={`px-4 py-2 rounded-lg ${item.speaker === 'user' ? 'bg-cyan-900/50 text-cyan-100 text-left' : 'bg-gray-900/50 text-gray-200 text-left'}`}>
+                                <p>{item.text}</p>
+                            </div>
+                        </div>
+                    ))}
+                    <div ref={transcriptEndRef} />
+                </div>
+            </div>
+
+            {/* Controller Area */}
+            <div className="flex-shrink-0 flex flex-col items-center justify-center pt-8">
+                 <button 
                     onClick={status === 'idle' || status === 'error' ? startConversation : stopConversation} 
                     className={`p-8 rounded-full bg-gray-900/50 border border-cyan-500/30 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-cyan-500/50 ${pulseClass}`}
                     aria-label={status === 'idle' ? 'Start conversation' : 'Stop conversation'}
                 >
                     <MicrophoneIcon status={status} />
                 </button>
-                <p className="mt-8 text-lg text-gray-400 font-medium tracking-wider">{getStatusText()}</p>
-            </div>
-            
-            <div className="w-full max-w-3xl h-52 bg-gray-900/50 rounded-lg p-4 overflow-y-auto mt-8 border border-cyan-500/20 shadow-inner font-mono text-sm">
-                {transcript.length === 0 && <p className="text-gray-600">&gt; STANDBY FOR TRANSCRIPTION...</p>}
-                {transcript.map((item, index) => (
-                    <div key={index} className="mb-2 animate-fade-in">
-                        <span className={`font-bold ${item.speaker === 'user' ? 'text-cyan-400' : 'text-gray-200'}`}>
-                           &gt; {item.speaker.toUpperCase()}:
-                        </span> 
-                        <span className="text-gray-300"> {item.text}</span>
-                    </div>
-                ))}
+                <p className="mt-6 text-lg text-gray-400 font-medium tracking-wider">{getStatusText()}</p>
             </div>
         </div>
     );
